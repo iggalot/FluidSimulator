@@ -5,8 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FluidSimulator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="700" Width="700">
-    <Grid>
-        <Canvas Name="MainCanvas" Background="Black" Margin="5" Width="600" Height="600" />
-    </Grid>
+        Title="MainWindow" Height="700" Width="800">
+    <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
+            <Canvas Name="MainCanvas" Background="Black" Margin="5" Width="600" Height="600" />
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Vertical">
+                    <Label>Number of Particles</Label>
+                    <TextBox Text="{Binding ElementName=slNumParticleValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                    <Slider Name="slNumParticleValue" 
+                            Minimum ="1" Maximum="500" TickPlacement="BottomRight" TickFrequency="1"
+                            IsSnapToTickEnabled="True"
+                            ValueChanged="slNumParticleValue_ValueChanged"/>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+        <Button Name="btnStart" Content="Start" Click="btnStart_Click"/>
+    </StackPanel>
 </Window>

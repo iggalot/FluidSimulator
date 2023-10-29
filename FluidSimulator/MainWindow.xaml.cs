@@ -18,10 +18,18 @@ namespace FluidSimulator
 
         double collision_damping = 1.0;  // factor for amount of rebound as a function of initial velicty.
         double SPEED_FACTOR = 800;  // a multiplier for the speed of the animation.
-        public double gravity = 0; // gravity scalar value
+        public double gravity = 9.81; // gravity scalar value
 
-        Vector2 position = new Vector2(0, 0);
-        Vector2 velocity = new Vector2(0,0);
+        // size of the particle
+        int NumberOfParticles = 1;
+        int NumParticlesPerRow = 1;
+        int NumParticlesPerColumn = 1;
+        double particleSpacing = 15.0;
+        double particleSize = 7.5f;
+
+
+        Vector2[] positions;
+        Vector2[] velocities;
         Vector2 halfBoundBox = new Vector2(0, 0); // for storing information about the constraint box.  Set initial values in constructor below.
 
         // directional 2D unit vectors
@@ -30,16 +38,12 @@ namespace FluidSimulator
         Vector2 UP = new Vector2(0, -1);
         Vector2 LEFT = new Vector2(-1, 0);
 
-        // size of the particle
-        double drop_dia = 7.5f;
+
 
         // time information
         private TimeSpan lastRender;
         double time = 0; // total time of the simulation
         double dt = 0;
-
-        // our bouncing ball
-        Ellipse cir = new Ellipse();
 
         public MainWindow()
         {
@@ -49,44 +53,51 @@ namespace FluidSimulator
             halfBoundBox.X = (float)(0.5 * MainCanvas.Width);
             halfBoundBox.Y = (float)(0.5 * MainCanvas.Height);
 
-            // set the initial position of the particle.
-            position.X = (float)(0.5 * MainCanvas.Width);
-            position.Y = (float)(0.5 * MainCanvas.Height);
 
+
+ 
+        }
+
+        // for the collision detection.
+        private void ResolveCollisions(ref Vector2[] positions, ref Vector2[] velocities)
+        {
+            for (int i = 0; i < positions.Length; i++)
+            {
+                // check collisions with the bounding box edges
+                if ((positions[i].Y > (MainCanvas.Height - 2 * particleSize)))
+                {
+                    positions[i].Y = (float)(2.0 * halfBoundBox.Y - 2 * particleSize);
+                    velocities[i].Y *= (float)(-1.0 * collision_damping);
+                }
+                if (positions[i].Y < 0)
+                {
+                    positions[i].Y = 0;
+                    velocities[i].Y *= (float)(-1.0 * collision_damping);
+                }
+
+                if ((positions[i].X > (2.0 * halfBoundBox.X - 2 * particleSize)))
+                {
+                    positions[i].X = (float)(2 * halfBoundBox.X - 2 * particleSize);
+                    velocities[i].X *= (float)(-1.0 * collision_damping);
+                }
+                if (positions[i].X < 0)
+                {
+                    positions[i].X = 0;
+                    velocities[i].X *= (float)(-1.0 * collision_damping);
+                }
+            }
+        }
+
+        private void Start()
+        { 
 
             // set the initial render time.
             lastRender = TimeSpan.FromTicks(DateTime.Now.Ticks);
 
             // set the  rendering callback for the animation.
-            CompositionTarget.Rendering += StartAnimation;    
+            CompositionTarget.Rendering += StartAnimation;
         }
 
-        // for the collision detection.
-        private void ResolveCollisions()
-        {
-            // check collisions with the bounding box edges
-            if ((position.Y > (MainCanvas.Height - 2 * drop_dia)))
-            {
-                position.Y = (float)(2.0 * halfBoundBox.Y - 2 * drop_dia);
-                velocity.Y *= (float)(-1.0 * collision_damping);
-            }
-            if (position.Y < 0)
-            {
-                position.Y = 0;
-                velocity.Y *= (float)(-1.0 * collision_damping);
-            }
-
-            if ((position.X > (2.0 * halfBoundBox.X - 2 * drop_dia)))
-            {
-                position.X = (float)(2 * halfBoundBox.X - 2 * drop_dia);
-                velocity.X *= (float)(-1.0 * collision_damping);
-            }
-            if (position.X < 0)
-            {
-                position.X = 0;
-                velocity.X *= (float)(-1.0 * collision_damping);
-            }
-        }
 
         /// <summary>
         /// The animation callback.  Computes the particle velocity and position, checks the collision criteria, and draws the particle(s)
@@ -99,22 +110,67 @@ namespace FluidSimulator
             dt = Math.Max(0, (renderArgs.RenderingTime - lastRender).TotalSeconds);  // make sure we dont;t get a negative number when it's really zero on first pass
             lastRender = renderArgs.RenderingTime;
 
-            velocity += LEFT * (float)(gravity * dt * SPEED_FACTOR);
-            position += velocity * (float)dt;
-            ResolveCollisions();
+            for (int i = 0; i < positions.Length; i++)
+            {
+                velocities[i] += DOWN * (float)(gravity * dt * SPEED_FACTOR);
+                positions[i] += velocities[i] * (float)dt;
+                ResolveCollisions(ref positions, ref velocities);
+            }
 
-            MainCanvas.Children.Clear();
-
-            // Draw the the circles
-            cir.Width = 2.0 * drop_dia;
-            cir.Height = 2.0 * drop_dia;
-            cir.Fill = drop_color;
-            Canvas.SetLeft(cir, position.X);
-            Canvas.SetTop(cir, position.Y);
-
-            MainCanvas.Children.Add(cir);
+            DrawParticles();
 
             time += dt;
+        }
+
+        private void DrawParticles()
+        {
+            MainCanvas.Children.Clear();
+
+            for (int i = 0; i < positions.Length; i++)
+            {
+                // Draw the the circles
+                Ellipse cir = new Ellipse();
+                cir.Width = 2.0 * particleSize;
+                cir.Height = 2.0 * particleSize;
+                cir.Fill = drop_color;
+                Canvas.SetLeft(cir, positions[i].X);
+                Canvas.SetTop(cir, positions[i].Y);
+
+                MainCanvas.Children.Add(cir);
+            }
+        }
+
+        private void slNumParticleValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // Do something once the values change.
+            NumberOfParticles = (int)slNumParticleValue.Value;
+            NumParticlesPerRow = (int)(Math.Floor(Math.Sqrt(NumberOfParticles)));
+            NumParticlesPerColumn = (NumberOfParticles - 1) / NumParticlesPerRow + 1;
+
+            // Clear our array of elements
+            positions = new Vector2[NumberOfParticles];
+            velocities = new Vector2[NumberOfParticles];
+
+            for (int i = 0; i < NumberOfParticles; i++)
+            {
+                float x = (float)((i % NumParticlesPerRow - NumParticlesPerRow / 2.0f + 0.5f) * particleSpacing);
+                float y = (float)((i / NumParticlesPerRow - NumParticlesPerColumn / 2.0f + 0.5f) * particleSpacing);
+
+                positions[i] = new Vector2(x, y);
+            }
+
+            // Move the particle pattern to the center of the canvas
+            for (int i = 0; i < NumberOfParticles; i++)
+            {
+                positions[i] = positions[i] + halfBoundBox;
+            }
+
+            DrawParticles();
+        }
+
+        private void btnStart_Click(object sender, RoutedEventArgs e)
+        {
+            Start();
         }
     }
 }
