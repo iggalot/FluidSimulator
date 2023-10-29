@@ -5,18 +5,59 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FluidSimulator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="700" Width="800">
+        Title="MainWindow" Height="700" Width="1000">
     <StackPanel Orientation="Vertical">
         <StackPanel Orientation="Horizontal">
             <Canvas Name="MainCanvas" Background="Black" Margin="5" Width="600" Height="600" />
             <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
                     <Label>Number of Particles</Label>
                     <TextBox Text="{Binding ElementName=slNumParticleValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
                     <Slider Name="slNumParticleValue" 
                             Minimum ="1" Maximum="500" TickPlacement="BottomRight" TickFrequency="1"
                             IsSnapToTickEnabled="True"
-                            ValueChanged="slNumParticleValue_ValueChanged"/>
+                            ValueChanged="slNumParticleValue_ValueChanged"
+                            Width="200"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Label>Gravity</Label>
+                    <TextBox Text="{Binding ElementName=slGravityValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                    <Slider Name="slGravityValue" 
+                            Minimum ="1" Maximum="200" TickPlacement="BottomRight" TickFrequency="1"
+                            IsSnapToTickEnabled="True"
+                            ValueChanged="slGravityValue_ValueChanged"
+                            Width="200"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Label>Collision Damping</Label>
+                    <TextBox Text="{Binding ElementName=slCollisionDampingValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                    <Slider Name="slCollisionDampingValue" 
+                            Minimum ="0" Maximum="3" TickPlacement="BottomRight" TickFrequency="0.01"
+                            IsSnapToTickEnabled="True"
+                            ValueChanged="slCollisionDampingValue_ValueChanged"
+                            Width="200"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Label>Particle Size</Label>
+                    <TextBox Text="{Binding ElementName=slParticleSizeValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                    <Slider Name="slParticleSizeValue" 
+                            Minimum ="0" Maximum="50" TickPlacement="BottomRight" TickFrequency="5"
+                            IsSnapToTickEnabled="True"
+                            ValueChanged="slParticleSizeValue_ValueChanged"
+                            Width="200"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <Label>Particle Spacing</Label>
+                    <TextBox Text="{Binding ElementName=slParticleSpacingValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
+                    <Slider Name="slParticleSpacingValue" 
+                            Minimum ="0" Maximum="100" TickPlacement="BottomRight" TickFrequency="1"
+                            IsSnapToTickEnabled="True"
+                            ValueChanged="slParticleSpacingValue_ValueChanged"
+                            Width="200"/>
                 </StackPanel>
             </StackPanel>
         </StackPanel>

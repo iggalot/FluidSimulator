@@ -16,7 +16,7 @@ namespace FluidSimulator
     {
         Brush drop_color = new SolidColorBrush(Color.FromRgb(0,0,220));
 
-        double collision_damping = 1.0;  // factor for amount of rebound as a function of initial velicty.
+        double collision_damping = 0.0;  // factor for amount of rebound as a function of initial velicty.
         double SPEED_FACTOR = 800;  // a multiplier for the speed of the animation.
         public double gravity = 9.81; // gravity scalar value
 
@@ -38,8 +38,6 @@ namespace FluidSimulator
         Vector2 UP = new Vector2(0, -1);
         Vector2 LEFT = new Vector2(-1, 0);
 
-
-
         // time information
         private TimeSpan lastRender;
         double time = 0; // total time of the simulation
@@ -52,10 +50,6 @@ namespace FluidSimulator
             // set the initial values for the bounding box -- default should be the limits of the canvas, but not necessarily true
             halfBoundBox.X = (float)(0.5 * MainCanvas.Width);
             halfBoundBox.Y = (float)(0.5 * MainCanvas.Height);
-
-
-
- 
         }
 
         // for the collision detection.
@@ -147,6 +141,19 @@ namespace FluidSimulator
             NumParticlesPerRow = (int)(Math.Floor(Math.Sqrt(NumberOfParticles)));
             NumParticlesPerColumn = (NumberOfParticles - 1) / NumParticlesPerRow + 1;
 
+            ArrangeParticleSpacings();
+
+            DrawParticles();
+        }
+
+        private void ArrangeParticleSpacings()
+        {
+
+            if (particleSpacing < 2 * particleSize)
+            {
+                particleSpacing = 2 * particleSize;
+            }
+
             // Clear our array of elements
             positions = new Vector2[NumberOfParticles];
             velocities = new Vector2[NumberOfParticles];
@@ -164,6 +171,36 @@ namespace FluidSimulator
             {
                 positions[i] = positions[i] + halfBoundBox;
             }
+        }
+
+        private void slGravityValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // Do something once the values change.
+            gravity = (double)slGravityValue.Value;
+        }
+
+        private void slCollisionDampingValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // Do something once the values change.
+            collision_damping = (double)slCollisionDampingValue.Value;
+        }
+
+        private void slParticleSizeValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // Do something once the values change.
+            particleSize = (double)slParticleSizeValue.Value;
+
+            ArrangeParticleSpacings();
+
+            DrawParticles();
+        }
+
+        private void slParticleSpacingValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // Do something once the values change.
+            particleSpacing = (double)slParticleSpacingValue.Value;
+
+            ArrangeParticleSpacings();
 
             DrawParticles();
         }
