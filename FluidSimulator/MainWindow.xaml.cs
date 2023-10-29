@@ -16,21 +16,25 @@ namespace FluidSimulator
     {
         Brush drop_color = new SolidColorBrush(Color.FromRgb(0,0,220));
 
-         double SPEED_FACTOR = 50;
+        double collision_damping = 1.0;  // factor for amount of rebound as a function of initial velicty.
+        double SPEED_FACTOR = 800;
         public double gravity = 9.81;
-        Vector2 position = new Vector2(300,100);
-        double delta_y = 0;
+        Vector2 position = new Vector2(0, 0);
 
         Vector2 velocity = new Vector2(0,0);
+        Vector2 halfBoundBox = new Vector2(0, 0);
 
         Vector2 DOWN = new Vector2(0, 1);
+        Vector2 RIGHT = new Vector2(1, 0);
         Vector2 UP = new Vector2(0, -1);
+        Vector2 LEFT = new Vector2(-1, 0);
+
 
         double drop_dia = 7.5f;
 
 
         private TimeSpan lastRender;
-        double time = 0;
+        double time = 0; // total time of the simulation
         double dt = 0;
 
         Ellipse cir = new Ellipse();
@@ -39,8 +43,36 @@ namespace FluidSimulator
         {
             InitializeComponent();
 
+            halfBoundBox.X = (float)(0.5 * MainCanvas.Width);
+            halfBoundBox.Y = (float)(0.5 * MainCanvas.Height);
+
             lastRender = TimeSpan.FromTicks(DateTime.Now.Ticks);
             CompositionTarget.Rendering += StartAnimation;    
+        }
+
+        private void ResolveCollisions()
+        {
+            if ((position.Y > (MainCanvas.Height - 2 * drop_dia)))
+            {
+                position.Y = (float)(2.0 * halfBoundBox.Y - 2 * drop_dia);
+                velocity.Y *= (float)(-1.0 * collision_damping);
+            }
+            if (position.Y < 0)
+            {
+                position.Y = 0;
+                velocity.Y *= (float)(-1.0 * collision_damping);
+            }
+
+            if ((position.X > (2.0 * halfBoundBox.X - 2 * drop_dia)))
+            {
+                position.X = (float)(2 * halfBoundBox.X - 2 * drop_dia);
+                velocity.X *= (float)(-1.0 * collision_damping);
+            }
+            if (position.X < 0)
+            {
+                position.X = 0;
+                velocity.X *= (float)(-1.0 * collision_damping);
+            }
         }
 
         private void StartAnimation(object sender, EventArgs e)
@@ -49,26 +81,15 @@ namespace FluidSimulator
             dt = Math.Max(0, (renderArgs.RenderingTime - lastRender).TotalSeconds);  // make sure we dont;t get a negative number when it's really zero on first pass
             lastRender = renderArgs.RenderingTime;
 
-            // For an elliptical pattern
-            //double x = 180 + 150 * Math.Cos(2 * time);
-            //double y = 180 + 75 * Math.Sin(2 * time);
-
-            position.X = (float)(0.5 * MainCanvas.Width);
-            delta_y += (float)(gravity * dt * SPEED_FACTOR);
-
-            if (delta_y > MainCanvas.Height - 2*drop_dia)
-            {
-                position.Y = (float)(MainCanvas.Height - 2*drop_dia);
-            } else
-            {
-                position.Y = (float)delta_y;
-            }
+            velocity += LEFT * (float)(gravity * dt * SPEED_FACTOR);
+            position += velocity * (float)dt;
+            ResolveCollisions();
 
             MainCanvas.Children.Clear();
 
-
-            cir.Width = 2 * drop_dia;
-            cir.Height = 2 * drop_dia;
+            // Draw the the circles
+            cir.Width = 2.0 * drop_dia;
+            cir.Height = 2.0 * drop_dia;
             cir.Fill = drop_color;
             Canvas.SetLeft(cir, position.X);
             Canvas.SetTop(cir, position.Y);
@@ -77,28 +98,5 @@ namespace FluidSimulator
 
             time += dt;
         }
-
-        //private void timer_Tick(object sender, EventArgs e)
-        //{
-        //    Update();
-        //}
-
-        //public void Update()
-        //{
-        //    MainCanvas.Children.Clear();
-
-        //    velocity += DOWN * gravity * SPEED_FACTOR;
-        //    position += velocity * (int)deltaTime.TotalSeconds;
-
-        //    if (position.Y > MainCanvas.Height)
-        //    {
-        //        position.Y = (float)MainCanvas.Height - drop_dia;
-        //    }
-
-
-
-        //    MainCanvas.Children.Add(cir);
-
-        //}
     }
 }
