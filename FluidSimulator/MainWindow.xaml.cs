@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Numerics;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
@@ -14,6 +16,10 @@ namespace FluidSimulator
     /// </summary>
     public partial class MainWindow : Window
     {
+        bool bFirstLoad = false;  // for determining when the window is loaded
+        WriteableBitmap wb {get; set;}
+        public object Graphics { get; private set; }
+
         Brush drop_color = new SolidColorBrush(Color.FromRgb(0,0,220));
 
         double collision_damping = 0.0;  // factor for amount of rebound as a function of initial velicty.
@@ -50,6 +56,103 @@ namespace FluidSimulator
             // set the initial values for the bounding box -- default should be the limits of the canvas, but not necessarily true
             halfBoundBox.X = (float)(0.5 * MainCanvas.Width);
             halfBoundBox.Y = (float)(0.5 * MainCanvas.Height);
+
+//            RenderBMP();
+//            img.ImageSource = wb;
+        }
+
+        private void DoRenderBMP()
+        {
+            if (!bFirstLoad)
+                return;
+
+            // initialize our writeable bmp
+            wb = new WriteableBitmap((int)(MainCanvas.ActualWidth), (int)(MainCanvas.ActualHeight), 96, 96, PixelFormats.Bgra32, null);
+
+            Int32Rect rect = new Int32Rect(0, 0, (int)MainCanvas.ActualWidth, (int)MainCanvas.ActualHeight);
+
+            //Width * height *  bytes per pixel aka(32/8)
+            byte[] pixels =
+            new byte[(int)MainCanvas.ActualWidth * (int)MainCanvas.ActualHeight * (wb.Format.BitsPerPixel / 8)];
+
+            Random rand = new Random();
+            // Color the background of the drawing area
+            for (int y = 0; y < wb.PixelHeight; y++)
+            {
+                for (int x = 0; x < wb.PixelWidth; x++)
+                {
+
+                    int blue = 0;
+                    int green = 0;
+                    int red = 0;
+                    int alpha = 255;
+
+                    int pixelOffset = CalculatePixelOffset(x, y);
+                    pixels[pixelOffset] = (byte)blue;
+                    pixels[pixelOffset + 1] = (byte)green;
+                    pixels[pixelOffset + 2] = (byte)red;
+                    pixels[pixelOffset + 3] = (byte)alpha;
+                }
+
+            }
+
+            // Draw each particle
+            foreach (var item in positions)
+            {
+                DrawCircleToBMP(item, ref pixels);
+            }
+
+            int stride = wb.PixelWidth * (wb.Format.BitsPerPixel / 8);
+            wb.WritePixels(rect, pixels, stride, 0);
+
+            img.Source = wb;
+        }
+
+        private void RenderBMP_Click(object sender, RoutedEventArgs e)
+        {
+            DoRenderBMP();
+        }
+
+        private void DrawCircleToBMP(Vector2 pos, ref byte[] pixels)
+        {
+            int blue = 0;
+            int green = 0;
+            int red = 255;
+            int alpha = 255;
+
+            for (double i = 0.0; i < 360.0; i += 0.1)
+            {
+                double angle = i * System.Math.PI / 180;
+                int x_max = (int)(pos.X + particleSize + particleSize * Math.Cos(angle));
+                int x_min = (int)(pos.X + particleSize - particleSize * Math.Cos(angle));
+
+                int y = (int)(pos.Y + particleSize + particleSize * Math.Sin(angle));
+
+                // check the limits
+                if (x_min < 0 || x_max > MainCanvas.ActualWidth || y < 0 || y >= MainCanvas.ActualHeight)
+                {
+                    return; // outside limits so do nothing.
+                }
+
+                // iterate along all the pixels on a horizontal line between x_min and x_max at the height elevation of y;
+                for (int m = x_min; m < x_max; m++)
+                {
+                    int pixelOffset = CalculatePixelOffset(m, y);
+                    //if (pixelOffset + 3 > pixels.Length)
+                    //    return;
+                    pixels[pixelOffset] = (byte)blue;
+                    pixels[pixelOffset + 1] = (byte)green;
+                    pixels[pixelOffset + 2] = (byte)red;
+                    pixels[pixelOffset + 3] = (byte)alpha;
+                }
+
+            }
+        }
+
+        private int CalculatePixelOffset(int x, int y)
+        { //pixel with is the length of a row
+          //mulitply it by what row you want to be on then add the remaining pixel to move to the right
+            return ((x + (wb.PixelWidth * y)) * (wb.Format.BitsPerPixel / 8));
         }
 
         // for the collision detection.
@@ -84,14 +187,12 @@ namespace FluidSimulator
 
         private void Start()
         { 
-
             // set the initial render time.
             lastRender = TimeSpan.FromTicks(DateTime.Now.Ticks);
 
             // set the  rendering callback for the animation.
             CompositionTarget.Rendering += StartAnimation;
         }
-
 
         /// <summary>
         /// The animation callback.  Computes the particle velocity and position, checks the collision criteria, and draws the particle(s)
@@ -100,9 +201,11 @@ namespace FluidSimulator
         /// <param name="e"></param>
         private void StartAnimation(object sender, EventArgs e)
         {
-            RenderingEventArgs renderArgs = (RenderingEventArgs)e;
-            dt = Math.Max(0, (renderArgs.RenderingTime - lastRender).TotalSeconds);  // make sure we dont;t get a negative number when it's really zero on first pass
-            lastRender = renderArgs.RenderingTime;
+            //RenderingEventArgs renderArgs = (RenderingEventArgs)e;
+            //dt = Math.Max(0, (renderArgs.RenderingTime - lastRender).TotalSeconds);  // make sure we dont;t get a negative number when it's really zero on first pass
+            //lastRender = renderArgs.RenderingTime;
+//            dt = 0;
+
 
             for (int i = 0; i < positions.Length; i++)
             {
@@ -111,27 +214,32 @@ namespace FluidSimulator
                 ResolveCollisions(ref positions, ref velocities);
             }
 
-            DrawParticles();
+//            DrawParticlesToCanvas();
+
+            //// For the writeable BMP
+            DoRenderBMP();
+
+            dt += 0.0005;
 
             time += dt;
         }
 
-        private void DrawParticles()
+        private void DrawParticlesToCanvas()
         {
-            MainCanvas.Children.Clear();
+            //MainCanvas.Children.Clear();
 
-            for (int i = 0; i < positions.Length; i++)
-            {
-                // Draw the the circles
-                Ellipse cir = new Ellipse();
-                cir.Width = 2.0 * particleSize;
-                cir.Height = 2.0 * particleSize;
-                cir.Fill = drop_color;
-                Canvas.SetLeft(cir, positions[i].X);
-                Canvas.SetTop(cir, positions[i].Y);
+            //for (int i = 0; i < positions.Length; i++)
+            //{
+            //    // Draw the the circles
+            //    Ellipse cir = new Ellipse();
+            //    cir.Width = 2.0 * particleSize;
+            //    cir.Height = 2.0 * particleSize;
+            //    cir.Fill = drop_color;
+            //    Canvas.SetLeft(cir, positions[i].X);
+            //    Canvas.SetTop(cir, positions[i].Y);
 
-                MainCanvas.Children.Add(cir);
-            }
+            //    MainCanvas.Children.Add(cir);
+            //}
         }
 
         private void slNumParticleValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -143,7 +251,10 @@ namespace FluidSimulator
 
             ArrangeParticleSpacings();
 
-            DrawParticles();
+            DrawParticlesToCanvas();
+
+            //// For the writeable BMP
+            DoRenderBMP();
         }
 
         private void ArrangeParticleSpacings()
@@ -192,7 +303,10 @@ namespace FluidSimulator
 
             ArrangeParticleSpacings();
 
-            DrawParticles();
+            DrawParticlesToCanvas();
+
+            //// For the writeable BMP
+            DoRenderBMP();
         }
 
         private void slParticleSpacingValue_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -202,12 +316,20 @@ namespace FluidSimulator
 
             ArrangeParticleSpacings();
 
-            DrawParticles();
+            DrawParticlesToCanvas();
+
+            //// For the writeable BMP
+            DoRenderBMP();
         }
 
         private void btnStart_Click(object sender, RoutedEventArgs e)
         {
             Start();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            bFirstLoad = true;
         }
     }
 }

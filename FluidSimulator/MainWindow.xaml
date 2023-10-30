@@ -5,11 +5,25 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FluidSimulator"
         mc:Ignorable="d"
-        Title="MainWindow" Height="700" Width="1000">
-    <StackPanel Orientation="Vertical">
-        <StackPanel Orientation="Horizontal">
-            <Canvas Name="MainCanvas" Background="Black" Margin="5" Width="600" Height="600" />
-            <StackPanel Orientation="Vertical">
+        Title="MainWindow" 
+        Loaded="Window_Loaded">
+    <Grid Name="MyGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="600"></RowDefinition>
+            <RowDefinition Height="*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="400"></ColumnDefinition>
+            <ColumnDefinition Width="400"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        
+        <Image Grid.Column="0" Grid.Row="0" x:Name="img" />
+        <Button Grid.Column="0" Grid.Row="1" Click="RenderBMP_Click"></Button>
+        
+        <Canvas Grid.Column="1" Name="MainCanvas" Background="Black" Width="400" Height="400" />
+
+            <StackPanel Grid.Column="2" Orientation="Vertical"  Margin="10">
                 <StackPanel Orientation="Horizontal">
                     <Label>Number of Particles</Label>
                     <TextBox Text="{Binding ElementName=slNumParticleValue, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Width="40" />
@@ -59,8 +73,9 @@
                             ValueChanged="slParticleSpacingValue_ValueChanged"
                             Width="200"/>
                 </StackPanel>
-            </StackPanel>
+            
+                <Button Name="btnStart" Content="Start" Click="btnStart_Click"/>
         </StackPanel>
-        <Button Name="btnStart" Content="Start" Click="btnStart_Click"/>
-    </StackPanel>
+    </Grid>
+
 </Window>
