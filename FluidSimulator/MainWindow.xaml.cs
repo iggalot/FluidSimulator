@@ -201,9 +201,9 @@ namespace FluidSimulator
         /// <param name="e"></param>
         private void StartAnimation(object sender, EventArgs e)
         {
-            //RenderingEventArgs renderArgs = (RenderingEventArgs)e;
-            //dt = Math.Max(0, (renderArgs.RenderingTime - lastRender).TotalSeconds);  // make sure we dont;t get a negative number when it's really zero on first pass
-            //lastRender = renderArgs.RenderingTime;
+            RenderingEventArgs renderArgs = (RenderingEventArgs)e;
+            dt = Math.Max(0, (renderArgs.RenderingTime - lastRender).TotalSeconds);  // make sure we dont;t get a negative number when it's really zero on first pass
+            lastRender = renderArgs.RenderingTime;
 //            dt = 0;
 
 
